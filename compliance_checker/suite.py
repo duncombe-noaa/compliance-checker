@@ -20,7 +20,7 @@ class CheckSuite(object):
 
     def _get_checks(self, checkclass):
         """
-        Helper method to retreive check methods from a Checker class.
+        Helper method to retrieve check methods from a Checker class.
 
         The name of the methods in the Checker class should start with "check_" for this
         method to find them.
