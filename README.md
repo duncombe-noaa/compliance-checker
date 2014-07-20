@@ -40,12 +40,18 @@ positional arguments:
 
 optional arguments:
   -h, --help            show this help message and exit
-  --test {acdd,cf,ioos} [{acdd,cf,ioos} ...], -t {acdd,cf,ioos} [{acdd,cf,ioos} ...], --test= {acdd,cf,ioos} [{acdd,cf,ioos} ...], -t= {acdd,cf,ioos} [{acdd,cf,ioos} ...]
+  
+  --test {acdd,cf,ioos} [{acdd,cf,ioos} ...], 
+  -t {acdd,cf,ioos} [{acdd,cf,ioos} ...], 
+  --test= {acdd,cf,ioos} [{acdd,cf,ioos} ...], 
+  -t= {acdd,cf,ioos} [{acdd,cf,ioos} ...]
                         Select the Checks you want to perform. Either all
                         (default), cf, ioos, or acdd.
+                        
   --criteria [{lenient,normal,strict}], -c [{lenient,normal,strict}]
                         Define the criteria for the checks. Either Strict,
                         Normal, or Lenient. Defaults to Normal.
+                        
   --verbose, -v         Increase output. May be specified up to three times.
 ```
 
