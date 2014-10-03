@@ -1,0 +1,138 @@
+<h1 id="ioos-compliance-checker">IOOS Compliance Checker</h1>
+<p>The IOOS Compliance Checker is a Python tool to check local/remote datasets against a variety of compliance standards. It is primarily a command-line tool (tested on OSX/Linux) and can also be used as a library import.</p>
+<p>It currently supports the following sources and standards:</p>
+<p>| Standard | .nc/OPeNDAP | SOS | | --------------------------------------------------------------------------------------------------- | ----------------------- | ------------------------------- | | <a href="http://wiki.esipfed.org/index.php/Attribute_Convention_for_Data_Discovery_%28ACDD%29">ACDD (1.1)</a> | Complete | - | | IOOS Asset Concept | - | GetCapabilities, DescribeSensor | | <a href="http://cfconventions.org/Data/cf-convetions/cf-conventions-1.6/build/cf-conventions.html">CF (1.6)</a> | Complete | - |</p>
+<h3 id="concepts-terminology">Concepts &amp; Terminology</h3>
+<p>Each compliance standard is executed by a Check Suite, which functions similar to a Python standard Unit Test. A Check Suite runs one or more checks against a dataset, returning a list of Results which are then aggregated into a summary.</p>
+<p>Each Result has a (# passed / # total) score, a weight (HIGH/MEDIUM/LOW), a computer-readable name, an optional list of human-readable messages, and optionally a list of child Results.</p>
+<p>A single score is then calculated by aggregating on the names, then multiplying the score by the weight and summing them together.</p>
+<p>The computer-readable name field controls how Results are aggregated together - in order to prevent the overall score for a Check Suite varying on the number of variables, it is possible to <em>group</em> Results together via the name property. Grouped results will only add up to a single top-level entry.</p>
+<p>See the <a href="//github.com/ioos/compliance-checker/wiki/Development">Development</a> wiki page for more details on implementation.</p>
+<h3 id="usage-command-line">Usage (command line)</h3>
+<p>The compliance-checker can work against local files (.nc files, .xml files of SOS GetCapabilities/DescribeSensor requests) or against remote URLs (OPeNDAP data URLs, SOS GetCapabilities/DescribeSensor URLs).</p>
+<blockquote>
+<p><strong>WARNING</strong> The CF/ACDD checks <strong>will access data</strong>, so if using a remote OPenDAP URL, please be sure the size is reasonable!</p>
+</blockquote>
+<pre><code>$ compliance-checker --help
+usage: compliance-checker [-h] [--test {acdd,cf,ioos} [{acdd,cf,ioos} ...]]
+                          [--criteria [{lenient,normal,strict}]] [--verbose]
+                          dataset_location
+
+positional arguments:
+  dataset_location      Defines the location of the dataset to be checked.
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --test {acdd,cf,ioos} [{acdd,cf,ioos} ...], -t {acdd,cf,ioos} [{acdd,cf,ioos} ...], --test= {acdd,cf,ioos} [{acdd,cf,ioos} ...], -t= {acdd,cf,ioos} [{acdd,cf,ioos} ...]
+                        Select the Checks you want to perform. Either all
+                        (default), cf, ioos, or acdd.
+  --criteria [{lenient,normal,strict}], -c [{lenient,normal,strict}]
+                        Define the criteria for the checks. Either Strict,
+                        Normal, or Lenient. Defaults to Normal.
+  --verbose, -v         Increase output. May be specified up to three times.</code></pre>
+<pre><code>$ compliance-checker --test=acdd test-data/ru07-20130824T170228_rt0.nc
+Running Compliance Checker on the dataset from: test-data/ru07-20130824T170228_rt0.nc
+
+
+-------------------------------------------------------
+   The dataset scored 95 out of 149 required points
+            during the acdd check
+      This test has passed under normal critera
+-------------------------------------------------------
+
+$ compliance-checker --test=cf sss20140107.v2.0cap.nc
+Running Compliance Checker on the dataset from: sss20140107.v2.0cap.nc
+
+
+--------------------------------------------------------------------------------
+                     The dataset scored 12 out of 14 points
+                              during the cf check
+--------------------------------------------------------------------------------
+                               Scoring Breakdown:
+
+
+                                 High Priority
+--------------------------------------------------------------------------------
+    Name                            :Priority: Score
+Variable names                          :3:     3/3
+conventions                             :3:     0/1
+data_types                              :3:     3/3
+dimension_names                         :3:     3/3
+units                                   :3:     0/1
+
+
+                                Medium Priority
+--------------------------------------------------------------------------------
+    Name                            :Priority: Score
+all_features_are_same_type              :2:     0/0
+contiguous_ragged_array                 :2:     0/0
+coordinate_type                         :2:     2/2
+coordinates_and_metadata                :2:     0/0
+feature_type                            :2:     0/0
+incomplete_multidim_array               :2:     0/0
+indexed_ragged_array                    :2:     0/0
+missing_data                            :2:     0/0
+orthogonal_multidim_array               :2:     0/0
+var                                     :2:     1/1
+
+
+--------------------------------------------------------------------------------
+                  Reasoning for the failed tests given below:
+
+
+Name                             Priority:     Score:Reasoning
+--------------------------------------------------------------------------------
+conventions                            :3:     0/ 1 : Conventions field is not
+                                                      present
+units                                  :3:     0/ 1 :
+    sss_cap                            :3:     0/ 1 :
+        known                          :3:     0/ 1 : unknown units type (PSU)</code></pre>
+<h3 id="installation">Installation</h3>
+<p>To install locally, set up a virtual environment (recommend using <a href="https://github.com/brainsik/virtualenv-burrito">virtualenv-burrito</a>):</p>
+<pre><code>$ mkvirtualenv --no-site-packages compliance-checker
+$ workon compliance-checker</code></pre>
+<p>The Python dependencies require several underlying system packages that most package managers should have. See the <a href="//github.com/ioos/compliance-checker/wiki/Installation">Installation</a> wiki page for more information.</p>
+<p>Install dependencies, numpy must be installed on its own:</p>
+<pre><code>$ pip install numpy
+$ pip install compliance-checker</code></pre>
+<h4 id="ms-windows">MS-Windows</h4>
+<p>IOOS Compliance Checker cannot be installed on MS-Windows systems. The required <code>udunitspy</code> and <code>swig</code> packages are either broken or unavailable for that OS (2014-08-18).</p>
+<h4 id="ubuntu">Ubuntu</h4>
+<p>Installing on Ubuntu? Check out the <a href="doc/ubuntu-install-guide.md">Ubuntu Install Guide</a></p>
+<h3 id="usage-from-python-code">Usage (from Python code)</h3>
+<pre class="sourceCode python"><code class="sourceCode python"><span class="ch">from</span> compliance_checker.runner <span class="ch">import</span> ComplianceCheckerCheckSuite
+
+cs = ComplianceCheckerCheckSuite()
+dataset = cs.load_dataset(<span class="st">&quot;/path/or/url/to/your/dataset&quot;</span>)
+groups = cs.run(dataset, <span class="st">&#39;acdd&#39;</span>)
+scores = groups[<span class="st">&#39;acdd&#39;</span>]</code></pre>
+<h3 id="development">Development</h3>
+<p>The compliance-checker is designed to be simple and hackable to edit existing compliance suites or introduce new ones. See the <a href="https://github.com/ioos/compliance-checker/wiki/Development">Development</a> wiki page for more information.</p>
+<h3 id="roadmap">Roadmap</h3>
+<ul>
+<li>Improved text output (#12)</li>
+<li>UGRID compliance (#33)</li>
+</ul>
+<h3 id="contributors">Contributors</h3>
+<ul>
+<li>Dave Foster <script type="text/javascript">
+<!--
+h='&#x61;&#x73;&#x61;&#x73;&#x63;&#x69;&#x65;&#110;&#x63;&#x65;&#46;&#x63;&#x6f;&#x6d;';a='&#64;';n='&#100;&#102;&#x6f;&#x73;&#116;&#x65;&#114;';e=n+a+h;
+document.write('<a h'+'ref'+'="ma'+'ilto'+':'+e+'">'+'<code>'+e+'</code>'+'<\/'+'a'+'>');
+// -->
+</script><noscript>&#100;&#102;&#x6f;&#x73;&#116;&#x65;&#114;&#32;&#x61;&#116;&#32;&#x61;&#x73;&#x61;&#x73;&#x63;&#x69;&#x65;&#110;&#x63;&#x65;&#32;&#100;&#x6f;&#116;&#32;&#x63;&#x6f;&#x6d;</noscript></li>
+<li>Dan Maher <script type="text/javascript">
+<!--
+h='&#x61;&#x73;&#x61;&#x73;&#x63;&#x69;&#x65;&#110;&#x63;&#x65;&#46;&#x63;&#x6f;&#x6d;';a='&#64;';n='&#100;&#x6d;&#x61;&#104;&#x65;&#114;';e=n+a+h;
+document.write('<a h'+'ref'+'="ma'+'ilto'+':'+e+'">'+'<code>'+e+'</code>'+'<\/'+'a'+'>');
+// -->
+</script><noscript>&#100;&#x6d;&#x61;&#104;&#x65;&#114;&#32;&#x61;&#116;&#32;&#x61;&#x73;&#x61;&#x73;&#x63;&#x69;&#x65;&#110;&#x63;&#x65;&#32;&#100;&#x6f;&#116;&#32;&#x63;&#x6f;&#x6d;</noscript></li>
+<li>Luke Campbell <script type="text/javascript">
+<!--
+h='&#x61;&#x73;&#x61;&#x73;&#x63;&#x69;&#x65;&#110;&#x63;&#x65;&#46;&#x63;&#x6f;&#x6d;';a='&#64;';n='&#108;&#x63;&#x61;&#x6d;&#112;&#98;&#x65;&#108;&#108;';e=n+a+h;
+document.write('<a h'+'ref'+'="ma'+'ilto'+':'+e+'">'+'<code>'+e+'</code>'+'<\/'+'a'+'>');
+// -->
+</script><noscript>&#108;&#x63;&#x61;&#x6d;&#112;&#98;&#x65;&#108;&#108;&#32;&#x61;&#116;&#32;&#x61;&#x73;&#x61;&#x73;&#x63;&#x69;&#x65;&#110;&#x63;&#x65;&#32;&#100;&#x6f;&#116;&#32;&#x63;&#x6f;&#x6d;</noscript></li>
+</ul>
+<p>And many more testers!</p>
+<p>Portions of the CF checker are based on Michael Decker's work, http://repositories.iek.fz-juelich.de/hg/CFchecker/</p>
